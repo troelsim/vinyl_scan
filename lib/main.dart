@@ -1,13 +1,69 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
-void main() => runApp(new MyApp());
+import 'package:flutter/material.dart';
+import 'package:barcode_scan/barcode_scan.dart';
+import 'package:simple_permissions/simple_permissions.dart';
+import 'package:spotify/spotify_io.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:redux/redux.dart';
+import 'package:redux_thunk/redux_thunk.dart';
+import 'package:flutter_redux/flutter_redux.dart';
+
+import 'discogs.dart';
+import 'models.dart';
+import 'reducer.dart';
+import 'view_model.dart';
+import 'widgets/main_screen.dart';
+
+void main() {
+  final store = Store<AppState>(appReducer, initialState: AppState.initial(), middleware: [thunkMiddleware]);
+  runApp(new VinylScanner(store: store));
+}
+
+class VinylScanner extends StatelessWidget {
+  final Store<AppState> store;
+
+  VinylScanner({Key key, this.store}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Vinyl Scanner',
+      theme: new ThemeData(
+        primaryColor: Color(0xFF424242),
+        accentColor: Color(0xFFFFA726),
+      ),
+      home: new Scaffold(
+        appBar: AppBar(
+          title: new Text('Vinyl Scanner'),
+        ),
+        body: StoreProvider<AppState>(
+          store: store,
+          child: StoreConnector<AppState, AppViewModel>(
+            converter: (Store<AppState> store) => AppViewModel.fromStore(store),
+            builder: (BuildContext context, AppViewModel vm) =>
+              MainScreen(
+                view: vm.view,
+                albumTitle: vm.albumTitle,
+                onDetected: vm.onDetected,
+                onCancel: vm.onCancel,
+                onSpotify: vm.launchSpotify,
+                onYoutube: vm.launchYoutube,
+              )
+          )
+        )
+      ),
+    );
+  }
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Vinyl Scanner',
       theme: new ThemeData(
         // This is the theme of your application.
         //
@@ -17,9 +73,11 @@ class MyApp extends StatelessWidget {
         // "hot reload" (press "r" in the console where you ran "flutter run",
         // or press Run > Flutter Hot Reload in IntelliJ). Notice that the
         // counter didn't reset back to zero; the application is not restarted.
-        primarySwatch: Colors.blue,
+        //primarySwatch: Colors.blue,
+        primaryColor: Color(0xFF424242),
+        accentColor: Color(0xFFFFA726),
       ),
-      home: new MyHomePage(title: 'Flutter Demo Home Page'),
+      home: new MyHomePage(title: 'Vinyl Scanner'),
     );
   }
 }
@@ -44,15 +102,48 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  bool loading = false;
+  bool noBarcodeResults = false;
+  bool noAlbumResults = false;
+  String albumTitle = "";
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+  void _resetState(){
+    setState((){
+      loading = false;
+      noBarcodeResults = false;
+      noAlbumResults = false;
+    });
+  }
+
+  void _startProcessing(){
+    setState((){
+      loading = true;
+    });
+  }
+
+  void _foundAlbumTitle(String albumTitle){
+    setState((){
+      this.albumTitle = albumTitle;
+    });
+  }
+
+  void _foundSpotifyAlbum(){
+    setState((){
+      this.loading = false;
+    });
+  }
+
+  void _barcodeLookupFailed(){
+    setState((){
+      this.loading = false;
+      this.noBarcodeResults = true;
+    });
+  }
+
+  void _spotifyLookupFailed(){
+    setState((){
+      this.loading = false;
+      this.noAlbumResults = true;
     });
   }
 
@@ -87,23 +178,105 @@ class _MyHomePageState extends State<MyHomePage> {
           // center the children vertically; the main axis here is the vertical
           // axis because Columns are vertical (the cross axis would be
           // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            new Text(
-              'You have pushed the button this many times:',
+            Padding(
+              padding: EdgeInsets.all(10.0),
+              child: Text(
+                "Tap the button, then point your camera to the UPC barcode on a record",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 24.0)
+              )
             ),
-            new Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
+            Text(
+              this.loading ? "Searching..." :
+              ( this.noBarcodeResults ? "No result for bar code" :
+                (this.noAlbumResults ? "Album not found" : "")
+              )
             ),
+            (this.loading ? CircularProgressIndicator()
+              : FittedBox(fit: BoxFit.contain, child: RaisedButton(
+                color: Theme.of(context).accentColor ,
+              onPressed: () async {
+                await SimplePermissions.requestPermission(Permission.Camera);
+                this._resetState();
+                this.setState(() { loading = true; });
+                String barcode = await BarcodeScanner.scan();
+                print("Barcode: $barcode");
+                String title;
+                try{
+                  title = await DiscogsClient().albumName(barcode);
+                }catch (e){
+                  print("No results on bar code");
+                  this.setState((){
+                    noBarcodeResults = true;
+                    loading = false;
+                  });
+                  return null;
+                }
+
+                print("Album title: $title");
+
+                final credentials = new SpotifyApiCredentials(
+                  "539dea7a0f914d7791afd4330ddd50cc",
+                  "83e24188a23041e69fbe77af1c721f0d"
+                );
+                final spotify = SpotifyApi(credentials);
+                final results = await spotify.albums.search(title);
+
+                if (results.length == 0){
+                  noAlbumResults = true;
+                    loading = false;
+                  print("No results on album title");
+                  return null;
+                }
+
+                final Album album = results.first;
+                print(album.uri);
+                _resetState();
+                final youtubeUrl = "youtube://YouTube.com/results?search_query=${Uri.encodeComponent(title)}";
+                //final youtubeUrl = "youtube://YouTube.com/results?search_query=sjakket";
+                print("Can we launch $youtubeUrl?");
+                if (await canLaunch(youtubeUrl)){
+                  print("Yes");
+                  launch(youtubeUrl);
+                  this.setState((){
+                    loading = false;
+                  });
+                  return null;
+                }else{
+                  print("No");
+                  return null;
+                }
+                this.setState((){
+                  loading = false;
+                });
+                if (await canLaunch(album.uri)){
+                  await launch(album.uri);
+                  Future.delayed(Duration(seconds: 5))
+                    .then((dynamic){ setState((){ loading = false; }); });
+                }else{
+                  print("Can't launch url");
+                  this.setState((){
+                    loading = false;
+                  });
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(Icons.camera_alt, size: 48.0),
+                  Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: Text("Scan barcode", style: TextStyle(fontSize: 24.0))
+                  )
+                ]
+              ),
+            ))),
+            //Scanner()
           ],
         ),
       ),
-      floatingActionButton: new FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: new Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }

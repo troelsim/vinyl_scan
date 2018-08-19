@@ -4,6 +4,14 @@ description: A new Flutter project.
 dependencies:
   flutter:
     sdk: flutter
+  barcode_scan: ^0.0.4
+  redux_thunk: ^0.2.0
+  flutter_redux: ^0.5.2
+  simple_permissions: 0.1.5
+  url_launcher: ^3.0.3
+  qr_mobile_vision: ^0.0.7
+  spotify:
+    path: ./spotify-dart
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -12,6 +20,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  mockito: ^2.2.3
 
 
 # For information on the generic Dart part of this file, see the

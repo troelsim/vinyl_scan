@@ -7,23 +7,96 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:vinyl_scan/main.dart';
+import 'package:vinyl_scan/widgets/main_screen.dart';
+import 'package:vinyl_scan/widgets/scanner.dart';
+import 'package:vinyl_scan/widgets/results.dart';
+import 'package:qr_mobile_vision/qr_camera.dart';
+
+Widget wrap(Widget child){
+  return MaterialApp(home: Scaffold(body: child));
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(new MyApp());
+  group("Main Screen widget", (){
+    testWidgets('Main widget renders scanner by default', (WidgetTester tester) async {
+      await tester.pumpWidget(wrap(MainScreen(view: MainScreenView.scanner)));
+      expect(find.byType(Scanner), findsOneWidget);
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    testWidgets("renders Spinner if loading", (WidgetTester tester) async {
+      await tester.pumpWidget(wrap(MainScreen(view: MainScreenView.loading)));
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    testWidgets("renders Not Found message if notFound", (WidgetTester tester) async {
+      await tester.pumpWidget(wrap(MainScreen(view: MainScreenView.notFound)));
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets("renders results", (WidgetTester tester) async {
+      await tester.pumpWidget(wrap(MainScreen(view: MainScreenView.results)));
+      expect(find.byType(Results), findsOneWidget);
+    });
+  });
+
+  group("Scanner widget", (){
+    testWidgets("renders QrCamera and some text", (WidgetTester tester) async {
+      await tester.pumpWidget(wrap(Scanner()));
+      expect(find.byType(QrCamera), findsOneWidget);
+      expect(find.text("Point to barcode"), findsOneWidget);
+    });
+  });
+
+  group("Results widget", (){
+    testWidgets("given a spotify result, renders spotify button", (WidgetTester tester) async {
+      await tester.pumpWidget(wrap(Results(spotifyTitle: "Sjakket - Bange & Forvirret")));
+      expect(find.text("Sjakket - Bange & Forvirret"), findsOneWidget);
+    });
+
+    testWidgets("given no spotify result, renders 'not found'", (WidgetTester tester) async {
+      await tester.pumpWidget(wrap(Results()));
+      expect(find.text("Not found"), findsOneWidget);
+    });
+
+    testWidgets("renders youtube button", (WidgetTester tester) async{
+      await tester.pumpWidget(wrap(Results()));
+      expect(find.text("Search YouTube"), findsOneWidget);
+    });
+
+    testWidgets("renders cancel button", (WidgetTester tester) async{
+      await tester.pumpWidget(wrap(Results()));
+      expect(find.text("Scan again"), findsOneWidget);
+    });
+
+    testWidgets("spotify button calls spotify callback", (WidgetTester tester) async {
+      bool tapped = false;
+      await tester.pumpWidget(wrap(Results(
+        spotifyTitle: "Sjakket - Bange & Forvirret",
+        spotifyCallback: () { tapped = true; }
+      )));
+      await tester.tap(find.text("Sjakket - Bange & Forvirret"));
+      await tester.pump();
+      expect(tapped, true);
+    });
+
+    testWidgets("youtube button calls youtube callback", (WidgetTester tester) async {
+      bool tapped = false;
+      await tester.pumpWidget(wrap(Results(
+        youtubeCallback: () { tapped = true; }
+      )));
+      await tester.tap(find.text("Search YouTube"));
+      await tester.pump();
+      expect(tapped, true);
+    });
+
+    testWidgets("cancel button calls cancel callback", (WidgetTester tester) async {
+      bool tapped = false;
+      await tester.pumpWidget(wrap(Results(
+        cancelCallback: () { tapped = true; }
+      )));
+      await tester.tap(find.text("Cancel"));
+      await tester.pump();
+      expect(tapped, true);
+    });
   });
 }

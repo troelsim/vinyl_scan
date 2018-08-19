@@ -1,0 +1,76 @@
+PODS:
+  - barcode_scan (0.0.1):
+    - Flutter
+    - MTBBarcodeScanner
+  - Flutter (1.0.0)
+  - GoogleMobileVision/BarcodeDetector (1.3.2):
+    - GoogleMobileVision/Detector (~> 1.3)
+  - GoogleMobileVision/Detector (1.3.2):
+    - GoogleToolboxForMac/Logger (~> 2.1)
+    - "GoogleToolboxForMac/NSData+zlib (~> 2.1)"
+    - GTMSessionFetcher/Core (~> 1.1)
+    - Protobuf (~> 3.1)
+  - GoogleToolboxForMac/Defines (2.1.4)
+  - GoogleToolboxForMac/Logger (2.1.4):
+    - GoogleToolboxForMac/Defines (= 2.1.4)
+  - "GoogleToolboxForMac/NSData+zlib (2.1.4)":
+    - GoogleToolboxForMac/Defines (= 2.1.4)
+  - GTMSessionFetcher/Core (1.2.0)
+  - MTBBarcodeScanner (5.0.6)
+  - native_device_orientation (0.0.1):
+    - Flutter
+  - Protobuf (3.6.1)
+  - qr_mobile_vision (0.0.1):
+    - Flutter
+    - GoogleMobileVision/BarcodeDetector
+  - simple_permissions (0.0.1):
+    - Flutter
+  - url_launcher (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - barcode_scan (from `.symlinks/plugins/barcode_scan/ios`)
+  - Flutter (from `.symlinks/flutter/ios`)
+  - native_device_orientation (from `.symlinks/plugins/native_device_orientation/ios`)
+  - qr_mobile_vision (from `.symlinks/plugins/qr_mobile_vision/ios`)
+  - simple_permissions (from `.symlinks/plugins/simple_permissions/ios`)
+  - url_launcher (from `.symlinks/plugins/url_launcher/ios`)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - GoogleMobileVision
+    - GoogleToolboxForMac
+    - GTMSessionFetcher
+    - MTBBarcodeScanner
+    - Protobuf
+
+EXTERNAL SOURCES:
+  barcode_scan:
+    :path: ".symlinks/plugins/barcode_scan/ios"
+  Flutter:
+    :path: ".symlinks/flutter/ios"
+  native_device_orientation:
+    :path: ".symlinks/plugins/native_device_orientation/ios"
+  qr_mobile_vision:
+    :path: ".symlinks/plugins/qr_mobile_vision/ios"
+  simple_permissions:
+    :path: ".symlinks/plugins/simple_permissions/ios"
+  url_launcher:
+    :path: ".symlinks/plugins/url_launcher/ios"
+
+SPEC CHECKSUMS:
+  barcode_scan: 8288e70cb430072003bce2c794a1431e7adbcb4d
+  Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
+  GoogleMobileVision: 6b0a3a2dae1974ec35d80fdeeacc3a03193642e0
+  GoogleToolboxForMac: 91c824d21e85b31c2aae9bb011c5027c9b4e738f
+  GTMSessionFetcher: 0c4baf0a73acd0041bf9f71ea018deedab5ea84e
+  MTBBarcodeScanner: bb0bb62e18b57f8a571a482248adc20722b70a91
+  native_device_orientation: 1126735962ee926c7067a26ee9b0be020d3f5890
+  Protobuf: 1eb9700044745f00181c136ef21b8ff3ad5a0fd5
+  qr_mobile_vision: 245b97161167cbe4865327b9cc4741f7f0897878
+  simple_permissions: b5bfb4ee9bfbf3ea1c0681070e642bc3beb5374d
+  url_launcher: 92b89c1029a0373879933c21642958c874539095
+
+PODFILE CHECKSUM: 7765ea4305eaab0b3dfd384c7de11902aa3195fd
+
+COCOAPODS: 1.5.3

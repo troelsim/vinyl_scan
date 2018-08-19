@@ -1,0 +1,3 @@
+[submodule "spotify-dart"]
+	path = spotify-dart
+	url = git@github.com:troelsim/spotify-dart.git
